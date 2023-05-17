@@ -7,11 +7,16 @@ public class DatabaseRoleOptions {
 
     private String name;
     private String dbName;
-    private String defaultTtl = "0";
-    private String maxTtl = "0";
+    private String defaultTtl;
+    private String maxTtl;
+    private String ttl;
+    private String username;
+    private String lastVaultRotation;
+    private String rotationPeriod;
     private List<String> creationStatements = new ArrayList<>();
     private List<String> revocationStatements = new ArrayList<>();
     private List<String> rollbackStatements = new ArrayList<>();
+    private List<String> rotationStatements = new ArrayList<>();
     private List<String> renewStatements = new ArrayList<>();
 
     public String getName() {
@@ -30,6 +35,22 @@ public class DatabaseRoleOptions {
         return maxTtl;
     }
 
+    public String getTtl() {
+        return ttl;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public String getLastVaultRotation() {
+        return lastVaultRotation;
+    }
+
+    public String getRotationPeriod() {
+        return rotationPeriod;
+    }
+
     public List<String> getCreationStatements() {
         return creationStatements;
     }
@@ -44,6 +65,10 @@ public class DatabaseRoleOptions {
 
     public List<String> getRollbackStatements() {
         return rollbackStatements;
+    }
+
+    public List<String> getRotationStatements() {
+        return rotationStatements;
     }
 
     /**
@@ -91,6 +116,47 @@ public class DatabaseRoleOptions {
     }
 
     /**
+     * @param ttl (string/int: 0) - Specifies the remaining TTL for the password of a static role.
+     * @return This object, with ttl populated, ready for other builder methods or immediate use.
+     */
+    public DatabaseRoleOptions ttl(final String ttl) {
+        this.ttl = ttl;
+        return this;
+    }
+
+    /**
+     * @param username {@code String} – Specifies the username of database user to use when creating
+     * the static role.
+     * @return This object, with username populated, ready for other builder methods or immediate
+     * use.
+     */
+    public DatabaseRoleOptions username(final String username) {
+        this.username = username;
+        return this;
+    }
+
+    /**
+     * @param lastVaultRotation {@code String} – Specifies the last time a rotation operation was
+     * successfully completed.
+     * @return This object, with lastVaultRotation populated, ready for other builder methods or
+     * immediate use.
+     */
+    public DatabaseRoleOptions lastVaultRotation(final String lastVaultRotation) {
+        this.lastVaultRotation = lastVaultRotation;
+        return this;
+    }
+
+    /**
+     * @param rotationPeriod {@code String} – Specifies the rotation period for the static role.
+     * @return This object, with rotationPeriod populated, ready for other builder methods or
+     * immediate use.
+     */
+    public DatabaseRoleOptions rotationPeriod(final String rotationPeriod) {
+        this.rotationPeriod = rotationPeriod;
+        return this;
+    }
+
+    /**
      * @param creationStatements {@code List<String>} – Specifies the database statements executed
      * to create and configure a user. See the plugin's API page for more information on support and
      * formatting for this parameter.
@@ -124,6 +190,18 @@ public class DatabaseRoleOptions {
      */
     public DatabaseRoleOptions rollbackStatements(final List<String> rollbackStatements) {
         this.rollbackStatements = rollbackStatements;
+        return this;
+    }
+
+    /**
+     * @param rotationStatements (list: []) – Specifies the database statements to be executed to
+     * rotate a password. Not every plugin type will support this functionality. See the plugin's
+     * API page for more information on support and formatting for this parameter.
+     * @return This object, with rotationStatements populated, ready for other builder methods or
+     * immediate use.
+     */
+    public DatabaseRoleOptions rotationStatements(final List<String> rotationStatements) {
+        this.rotationStatements = rotationStatements;
         return this;
     }
 

@@ -59,7 +59,7 @@ public class Database extends OperationsBase {
     }
 
     /**
-     * <p>Operation to create or update an role using the Database Secret engine.
+     * <p>Operation to create or update a dynamic role using the Database Secret engine.
      * Relies on an authentication token being present in the <code>VaultConfig</code>
      * instance.</p>
      *
@@ -88,12 +88,47 @@ public class Database extends OperationsBase {
      */
     public DatabaseResponse createOrUpdateRole(final String roleName,
             final DatabaseRoleOptions options) throws VaultException {
+        return createOrUpdateRole(roleName, options, false);
+    }
+
+    /**
+     * <p>Operation to create or update a dynamic or static role using the Database Secret engine.
+     * Relies on an authentication token being present in the <code>VaultConfig</code>
+     * instance.</p>
+     *
+     * <p>This version of the method accepts a <code>DatabaseRoleOptions</code> parameter,
+     * containing optional settings for the role creation operation.  Example usage:</p>
+     *
+     * <blockquote>
+     * <pre>{@code
+     * final VaultConfig config = new VaultConfig.address(...).token(...).build();
+     * final Vault vault = Vault.create(config);
+     *
+     * final DatabaseRoleOptions options = new DatabaseRoleOptions()
+     *                              .dbName("test")
+     *                              .maxTtl("9h");
+     * final DatabaseResponse response = vault.database().createOrUpdateRole("testRole", options);
+     *
+     * assertEquals(204, response.getRestResponse().getStatus());
+     * }</pre>
+     * </blockquote>
+     *
+     * @param roleName A name for the role to be created or updated
+     * @param options Optional settings for the role to be created or updated (e.g. db_name, ttl,
+     * etc)
+     * @param isStaticRole true if the role is static, false if dynamic
+     * @return A container for the information returned by Vault
+     * @throws VaultException If any error occurs or unexpected response is received from Vault
+     */
+    public DatabaseResponse createOrUpdateRole(final String roleName,
+            final DatabaseRoleOptions options, final boolean isStaticRole) throws VaultException {
         return retry(attempt -> {
+            String rolePath = isStaticRole ? "static-roles" : "roles";
             final String requestJson = roleOptionsToJson(options);
 
             final RestResponse restResponse = new Rest()//NOPMD
-                    .url(String.format("%s/v1/%s/roles/%s", config.getAddress(), this.mountPath,
-                            roleName))
+                    .url(String.format("%s/v1/%s/%s/%s", config.getAddress(), this.mountPath,
+                            rolePath, roleName))
                     .header("X-Vault-Token", config.getToken())
                     .header("X-Vault-Namespace", this.nameSpace)
                     .header("X-Vault-Request", "true")
@@ -115,8 +150,8 @@ public class Database extends OperationsBase {
     }
 
     /**
-     * <p>Operation to retrieve an role using the Database backend.  Relies on an authentication
-     * token being present in the <code>VaultConfig</code> instance.</p>
+     * <p>Operation to retrieve dynamic role using the Database backend.  Relies on an
+     * authentication token being present in the <code>VaultConfig</code> instance.</p>
      *
      * <p>The role information will be populated in the <code>roleOptions</code> field of the
      * <code>DatabaseResponse</code> return value.  Example usage:</p>
@@ -136,10 +171,38 @@ public class Database extends OperationsBase {
      * @throws VaultException If any error occurs or unexpected response is received from Vault
      */
     public DatabaseResponse getRole(final String roleName) throws VaultException {
+        return getRole(roleName, false);
+    }
+
+    /**
+     * <p>Operation to retrieve dynamic or static role using the Database backend.  Relies on an
+     * authentication token being present in the <code>VaultConfig</code> instance.</p>
+     *
+     * <p>The role information will be populated in the <code>roleOptions</code> field of the
+     * <code>DatabaseResponse</code> return value.  Example usage:</p>
+     *
+     * <blockquote>
+     * <pre>{@code
+     * final VaultConfig config = new VaultConfig.address(...).token(...).build();
+     * final Vault vault = Vault.create(config);
+     * final DatabaseResponse response = vault.database().getRole("testRole", true);
+     *
+     * final RoleOptions details = response.getRoleOptions();
+     * }</pre>
+     * </blockquote>
+     *
+     * @param roleName The name of the role to retrieve
+     * @param isStaticRole true if the role is static, false if dynamic
+     * @return A container for the information returned by Vault
+     * @throws VaultException If any error occurs or unexpected response is received from Vault
+     */
+    public DatabaseResponse getRole(final String roleName, final boolean isStaticRole)
+            throws VaultException {
         return retry(attempt -> {
+            String rolePath = isStaticRole ? "static-roles" : "roles";
             final RestResponse restResponse = new Rest()//NOPMD
-                    .url(String.format("%s/v1/%s/roles/%s", config.getAddress(), this.mountPath,
-                            roleName))
+                    .url(String.format("%s/v1/%s/%s/%s", config.getAddress(), this.mountPath,
+                            rolePath, roleName))
                     .header("X-Vault-Token", config.getToken())
                     .header("X-Vault-Namespace", this.nameSpace)
                     .header("X-Vault-Request", "true")
@@ -213,8 +276,8 @@ public class Database extends OperationsBase {
     }
 
     /**
-     * <p>Operation to delete an role using the Database backend.  Relies on an authentication
-     * token being present in the <code>VaultConfig</code> instance.</p>
+     * <p>Operation to delete a dynamic role using the Database backend. Relies on an
+     * authentication token being present in the <code>VaultConfig</code> instance.</p>
      *
      * <p>A successful operation will return a 204 HTTP status.  A <code>VaultException</code> will
      * be thrown if the role does not exist, or if any other problem occurs.  Example usage:</p>
@@ -234,10 +297,38 @@ public class Database extends OperationsBase {
      * @throws VaultException If any error occurs or unexpected response is received from Vault
      */
     public DatabaseResponse deleteRole(final String roleName) throws VaultException {
+        return deleteRole(roleName, false);
+    }
+
+    /**
+     * <p>Operation to delete static or dynamic role using the Database backend.  Relies on an
+     * authentication token being present in the <code>VaultConfig</code> instance.</p>
+     *
+     * <p>A successful operation will return a 204 HTTP status.  A <code>VaultException</code> will
+     * be thrown if the role does not exist, or if any other problem occurs.  Example usage:</p>
+     *
+     * <blockquote>
+     * <pre>{@code
+     * final VaultConfig config = new VaultConfig.address(...).token(...).build();
+     * final Vault vault = Vault.create(config);
+     *
+     * final DatabaseResponse response = vault.database().deleteRole("testRole", true);
+     * assertEquals(204, response.getRestResponse().getStatus();
+     * }</pre>
+     * </blockquote>
+     *
+     * @param roleName The name of the role to delete
+     * @param isStaticRole true if the role is static, false if dynamic
+     * @return A container for the information returned by Vault
+     * @throws VaultException If any error occurs or unexpected response is received from Vault
+     */
+    public DatabaseResponse deleteRole(final String roleName, final boolean isStaticRole)
+            throws VaultException {
         return retry(attempt -> {
+            String rolePath = isStaticRole ? "static-roles" : "roles";
             final RestResponse restResponse = new Rest()//NOPMD
-                    .url(String.format("%s/v1/%s/roles/%s", config.getAddress(), this.mountPath,
-                            roleName))
+                    .url(String.format("%s/v1/%s/%s/%s", config.getAddress(), this.mountPath,
+                            rolePath, roleName))
                     .header("X-Vault-Token", config.getToken())
                     .header("X-Vault-Namespace", this.nameSpace)
                     .header("X-Vault-Request", "true")
@@ -258,7 +349,7 @@ public class Database extends OperationsBase {
     }
 
     /**
-     * <p>Operation to generate a new set of credentials using the Database backend.
+     * <p>Operation to generate a new set of credentials using a dynamic role of Database backend.
      *
      * <p>A successful operation will return a 204 HTTP status.  A <code>VaultException</code> will
      * be thrown if the role does not exist, or if any other problem occurs.  Credential information
@@ -281,10 +372,41 @@ public class Database extends OperationsBase {
      * @throws VaultException If any error occurs or unexpected response is received from Vault
      */
     public DatabaseResponse creds(final String roleName) throws VaultException {
+        return creds(roleName, false);
+    }
+
+    /**
+     * <p>Operation to get current set of credentials from a static role of Database backend or to
+     * generate a new set of credentials from a dynamic role.
+     *
+     * <p>A successful operation will return a 204 HTTP status.  A <code>VaultException</code> will
+     * be thrown if the role does not exist, or if any other problem occurs.  Credential information
+     * will be populated in the
+     * <code>credential</code> field of the <code>DatabaseResponse</code> return value.  Example
+     * usage:</p>
+     *
+     * <blockquote>
+     * <pre>{@code
+     * final VaultConfig config = new VaultConfig.address(...).token(...).build();
+     * final Vault vault = Vault.create(config);
+     *
+     * final DatabaseResponse response = vault.database().creds("testRole");
+     * assertEquals(204, response.getRestResponse().getStatus();
+     * }</pre>
+     * </blockquote>
+     *
+     * @param roleName The role for which to retrieve credentials
+     * @param isStaticRole true if the role is static, false if dynamic
+     * @return A container for the information returned by Vault
+     * @throws VaultException If any error occurs or unexpected response is received from Vault
+     */
+    public DatabaseResponse creds(final String roleName, final boolean isStaticRole)
+            throws VaultException {
         return retry(attempt -> {
+            String credsPath = isStaticRole ? "static-creds" : "creds";
             final RestResponse restResponse = new Rest()//NOPMD
-                    .url(String.format("%s/v1/%s/creds/%s", config.getAddress(), this.mountPath,
-                            roleName))
+                    .url(String.format("%s/v1/%s/%s/%s", config.getAddress(), this.mountPath,
+                            credsPath, roleName))
                     .header("X-Vault-Token", config.getToken())
                     .header("X-Vault-Namespace", this.nameSpace)
                     .header("X-Vault-Request", "true")
@@ -315,12 +437,15 @@ public class Database extends OperationsBase {
             addJsonFieldIfNotNull(jsonObject, "db_name", options.getDbName());
             addJsonFieldIfNotNull(jsonObject, "default_ttl", options.getDefaultTtl());
             addJsonFieldIfNotNull(jsonObject, "max_ttl", options.getMaxTtl());
+            addJsonFieldIfNotNull(jsonObject, "rotation_period", options.getRotationPeriod());
             addJsonFieldIfNotNull(jsonObject, "creation_statements",
                     joinList(options.getCreationStatements()));
             addJsonFieldIfNotNull(jsonObject, "revocation_statements",
                     joinList(options.getRevocationStatements()));
             addJsonFieldIfNotNull(jsonObject, "rollback_statements",
                     joinList(options.getRollbackStatements()));
+            addJsonFieldIfNotNull(jsonObject, "rotation_statements",
+                    joinList(options.getRotationStatements()));
             addJsonFieldIfNotNull(jsonObject, "renew_statements",
                     joinList(options.getRenewStatements()));
         }

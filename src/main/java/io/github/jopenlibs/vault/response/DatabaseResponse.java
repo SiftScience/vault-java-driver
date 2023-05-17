@@ -48,12 +48,18 @@ public class DatabaseResponse extends LogicalResponse {
                 safeGetJsonArray(jsonObject, "revocation_statements"));
         final List<String> rollbackStatements = extractFromJsonArray(
                 safeGetJsonArray(jsonObject, "rollback_statements"));
+        final List<String> rotationStatements = extractFromJsonArray(
+                safeGetJsonArray(jsonObject, "rotation_statements"));
 
         final String dbName = data.get("db_name");
         final String defaultTtl = data.get("default_ttl");
-        final String maxTtl = data.get("default_ttl");
+        final String maxTtl = data.get("max_ttl");
+        final String username = data.get("username");
+        final String currentTtl = data.get("ttl");
+        final String lastVaultRotation = data.get("last_vault_rotation");
+        final String rotationPeriod = data.get("rotation_period");
 
-        if (dbName == null && defaultTtl == null && maxTtl == null) {
+        if (dbName == null) {
             return null;
         }
 
@@ -62,9 +68,14 @@ public class DatabaseResponse extends LogicalResponse {
                 .renewStatements(renewStatements)
                 .revocationStatements(revocationStatements)
                 .rollbackStatements(rollbackStatements)
+                .rotationStatements(rotationStatements)
                 .dbName(dbName)
                 .defaultTtl(defaultTtl)
-                .maxTtl(maxTtl);
+                .maxTtl(maxTtl)
+                .ttl(currentTtl)
+                .username(username)
+                .lastVaultRotation(lastVaultRotation)
+                .rotationPeriod(rotationPeriod);
     }
 
     private DatabaseCredential buildCredentialFromData(final Map<String, String> data) {
@@ -74,7 +85,7 @@ public class DatabaseResponse extends LogicalResponse {
         final String username = data.get("username");
         final String password = data.get("password");
 
-        if (username == null && password == null) {
+        if (password == null) {
             return null;
         }
 
